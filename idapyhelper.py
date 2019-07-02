@@ -6,6 +6,21 @@ __author__ = "Dennis Elser"
 DBG = False
 
 # --------------------------------------------------------------------------
+class FileViewer(ida_kernwin.Form):
+    """A form that displays a text file's content."""
+    def __init__(self, title, content):
+        idaapi.Form.__init__(self,
+("BUTTON YES NONE\n"
+"BUTTON NO NONE\n"
+"BUTTON CANCEL NONE\n"
+"%s\n\n"
+"<##Docstring##:{cbEditable}>"
+) % title,
+{'cbEditable': ida_kernwin.Form.MultiLineTextControl(text=content,
+    flags=ida_kernwin.textctrl_info_t.TXTF_READONLY |
+    ida_kernwin.textctrl_info_t.TXTF_FIXEDFONT)})
+
+# --------------------------------------------------------------------------
 class DocstringViewer(ida_kernwin.Form):
     """A form that displays a docstring."""
     def __init__(self, title, docstr):
@@ -20,17 +35,19 @@ class DocstringViewer(ida_kernwin.Form):
     flags=ida_kernwin.textctrl_info_t.TXTF_READONLY |
     ida_kernwin.textctrl_info_t.TXTF_FIXEDFONT)})
 
-
+# --------------------------------------------------------------------------
 class ChooserData:
+    """Structure that holds information for the chooser to display."""
     icon_ids = {"str": 80,
     "int": 8,
     "long": 8,
     "class": 89,
     "function": 81,
     "method": 99}
-    def __init__(self, mod_name, sym_name):
+    def __init__(self, mod_name, sym_name, file_name):
         self.mod_name = mod_name
         self.sym_name = sym_name
+        self.file_name = file_name
         self.doc_str = None
         self.sym_type = None
         self.sym_value = None
@@ -64,43 +81,43 @@ class PyHelperChooser(ida_kernwin.Choose2):
                 mod_name, _ = os.path.splitext(mod_name)
                 if mod_name not in ["init", "idaapi"]:
                     mod = __import__(mod_name)
-
+                    file_name = mod.__file__
                     for sym_name, obj in inspect.getmembers(mod):
 
                         if inspect.isfunction(obj):
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "function"
                             data.line_no = "%d" % obj.func_code.co_firstlineno
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
                         elif inspect.isclass(obj):
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "class"
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
                         elif inspect.ismethod(obj):
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "method"
                             data.line_no = "%d" % obj.im_func.func_code.co_firstlineno
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
                         elif type(obj) == int:
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "int"
                             data.sym_value = "0x%x" % (obj)
                             self.items.append(data)
 
                         elif type(obj) == long:
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "long"
                             data.sym_value = "0x%x" % (obj)
                             self.items.append(data)
 
                         elif type(obj) == str:
-                            data = ChooserData(mod_name, sym_name)
+                            data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "str"
                             data.sym_value = str(obj)
                             self.items.append(data)
@@ -135,6 +152,20 @@ class PyHelperChooser(ida_kernwin.Choose2):
             f, args = f.Compile()
             f.Open()
         return (ida_kernwin.Choose.NOTHING_CHANGED, )
+
+    def OnEditLine(self, n):
+        fn = self.items[n].file_name
+        if fn:
+            # ghetto
+            if fn.endswith(".pyc"):
+                fn = fn[:-1]
+            with open(fn) as fin:
+                f = FileViewer("%s" % (os.path.basename(fn)), fin.read())
+                f.modal = False
+                f.openform_flags = ida_kernwin.PluginForm.FORM_TAB
+                f, args = f.Compile()
+                f.Open()
+        return (ida_kernwin.Choose.NOTHING_CHANGED, )            
 
 try:
     pyhelper
