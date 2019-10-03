@@ -1,9 +1,24 @@
 import ida_kernwin, ida_diskio
-import os, inspect
+import os, inspect, sys
 
 __author__ = "Dennis Elser"
 
 DBG = False
+
+# --------------------------------------------------------------------------
+def is_ida_version(requested):
+    """Checks minimum required IDA version."""
+    rv = requested.split(".")
+    kv = ida_kernwin.get_kernel_version().split(".")
+
+    count = min(len(rv), len(kv))
+    if not count:
+        return False
+
+    for i in xrange(count):
+        if int(kv[i]) < int(rv[i]):
+            return False
+    return True
 
 # --------------------------------------------------------------------------
 class FileViewer(ida_kernwin.Form):
@@ -48,20 +63,20 @@ class ChooserData:
         self.mod_name = mod_name
         self.sym_name = sym_name
         self.file_name = file_name
-        self.doc_str = None
-        self.sym_type = None
-        self.sym_value = None
-        self.line_no = None
+        self.doc_str = ""
+        self.sym_type = ""
+        self.sym_value = ""
+        self.line_no = ""
 
     def get_icon(self):
         return self.icon_ids[self.sym_type]
 
 # --------------------------------------------------------------------------
-class PyHelperChooser(ida_kernwin.Choose2):
+class PyHelperChooser(ida_kernwin.Choose):
     """A chooser filled with information about IDAPython bindings.
     Output is supposed to be filtered with Ctrl-F."""
     def __init__(self, title, nb=5):
-        ida_kernwin.Choose2.__init__(self,
+        ida_kernwin.Choose.__init__(self,
                         title,
                         [ ["Module", 10 | ida_kernwin.Choose.CHCOL_PLAIN],
                         ["Symbol", 20 | ida_kernwin.Choose.CHCOL_PLAIN],
@@ -75,7 +90,10 @@ class PyHelperChooser(ida_kernwin.Choose2):
         self.build_items()
 
     def build_items(self):
-        pydir = ida_diskio.idadir("python")
+        subdir = ""
+        if is_ida_version("7.4"):
+            subdir, _, _, _, _ = sys.version_info
+        pydir = ida_diskio.idadir(os.path.join("python", str(subdir)))
         for mod_name in os.listdir(pydir):
             if mod_name.endswith(".py"):
                 mod_name, _ = os.path.splitext(mod_name)
@@ -148,7 +166,7 @@ class PyHelperChooser(ida_kernwin.Choose2):
         else:
             f = DocstringViewer("%s%s" % (data.sym_name, postfix), data.doc_str)
             f.modal = False
-            f.openform_flags = ida_kernwin.PluginForm.FORM_TAB
+            f.openform_flags = ida_kernwin.PluginForm.WOPN_TAB
             f, args = f.Compile()
             f.Open()
         return (ida_kernwin.Choose.NOTHING_CHANGED, )
@@ -162,7 +180,7 @@ class PyHelperChooser(ida_kernwin.Choose2):
             with open(fn) as fin:
                 f = FileViewer("%s" % (os.path.basename(fn)), fin.read())
                 f.modal = False
-                f.openform_flags = ida_kernwin.PluginForm.FORM_TAB
+                f.openform_flags = ida_kernwin.PluginForm.WOPN_TAB
                 f, args = f.Compile()
                 f.Open()
         return (ida_kernwin.Choose.NOTHING_CHANGED, )            
