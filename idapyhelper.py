@@ -84,7 +84,7 @@ class PyHelperChooser(ida_kernwin.Choose):
                         ["Type", 10 | ida_kernwin.Choose.CHCOL_PLAIN],
                         ["Value", 10 | ida_kernwin.Choose.CHCOL_HEX],
                         ["Line number", 10 | ida_kernwin.Choose.CHCOL_DEC],],
-                        flags=ida_kernwin.CH_QFLT | ida_kernwin.CH_NOIDB)
+                        flags=ida_kernwin.Choose.CH_QFLT | ida_kernwin.Choose.CH_NOIDB)
         self.items = []
         self.icon = 0
         self.build_items()
