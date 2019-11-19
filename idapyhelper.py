@@ -15,7 +15,7 @@ def is_ida_version(requested):
     if not count:
         return False
 
-    for i in xrange(count):
+    for i in range(count):
         if int(kv[i]) < int(rv[i]):
             return False
     return True
@@ -55,7 +55,6 @@ class ChooserData:
     """Structure that holds information for the chooser to display."""
     icon_ids = {"str": 80,
     "int": 8,
-    "long": 8,
     "class": 89,
     "function": 81,
     "method": 99}
@@ -105,7 +104,7 @@ class PyHelperChooser(ida_kernwin.Choose):
                         if inspect.isfunction(obj):
                             data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "function"
-                            data.line_no = "%d" % obj.func_code.co_firstlineno
+                            data.line_no = "%d" % obj.__code__.co_firstlineno
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
@@ -118,19 +117,13 @@ class PyHelperChooser(ida_kernwin.Choose):
                         elif inspect.ismethod(obj):
                             data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "method"
-                            data.line_no = "%d" % obj.im_func.func_code.co_firstlineno
+                            data.line_no = "%d" % obj.im_func.__code__.co_firstlineno
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
                         elif type(obj) == int:
                             data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "int"
-                            data.sym_value = "0x%x" % (obj)
-                            self.items.append(data)
-
-                        elif type(obj) == long:
-                            data = ChooserData(mod_name, sym_name, file_name)
-                            data.sym_type = "long"
                             data.sym_value = "0x%x" % (obj)
                             self.items.append(data)
 
@@ -141,7 +134,7 @@ class PyHelperChooser(ida_kernwin.Choose):
                             self.items.append(data)
                         else:
                             if DBG:
-                                print "%s: %s" % (type(obj), sym_name)
+                                msg("%s: %s" % (type(obj), sym_name))
 
     def OnGetLine(self, n):
         data = self.items[n]
