@@ -1,5 +1,5 @@
 import ida_kernwin, ida_diskio
-import os, inspect, sys
+import os, inspect, sys, idaapi
 
 __author__ = "Dennis Elser"
 
