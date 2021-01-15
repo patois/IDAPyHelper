@@ -117,7 +117,7 @@ class PyHelperChooser(ida_kernwin.Choose):
                         elif inspect.ismethod(obj):
                             data = ChooserData(mod_name, sym_name, file_name)
                             data.sym_type = "method"
-                            data.line_no = "%d" % obj.im_func.__code__.co_firstlineno
+                            data.line_no = "%d" % obj.__func__.__code__.co_firstlineno
                             data.doc_str = inspect.getdoc(obj)
                             self.items.append(data)
 
