@@ -1,30 +1,19 @@
-import ida_kernwin, ida_diskio
+import ida_kernwin, ida_diskio, ida_pro
 import os, inspect, sys
 
 __author__ = "Dennis Elser"
 
 DBG = False
 
-# --------------------------------------------------------------------------
-def is_ida_version(requested):
-    """Checks minimum required IDA version."""
-    rv = requested.split(".")
-    kv = ida_kernwin.get_kernel_version().split(".")
-
-    count = min(len(rv), len(kv))
-    if not count:
-        return False
-
-    for i in range(count):
-        if int(kv[i]) < int(rv[i]):
-            return False
-    return True
+# -----------------------------------------------------------------------------
+def is_ida_version(min_ver_required):
+    return ida_pro.IDA_SDK_VERSION >= min_ver_required
 
 # --------------------------------------------------------------------------
 class FileViewer(ida_kernwin.Form):
     """A form that displays a text file's content."""
     def __init__(self, title, content):
-        idaapi.Form.__init__(self,
+        ida_kernwin.Form.__init__(self,
 ("BUTTON YES NONE\n"
 "BUTTON NO NONE\n"
 "BUTTON CANCEL NONE\n"
@@ -39,7 +28,7 @@ class FileViewer(ida_kernwin.Form):
 class DocstringViewer(ida_kernwin.Form):
     """A form that displays a docstring."""
     def __init__(self, title, docstr):
-        idaapi.Form.__init__(self,
+        ida_kernwin.Form.__init__(self,
 ("BUTTON YES NONE\n"
 "BUTTON NO NONE\n"
 "BUTTON CANCEL NONE\n"
@@ -90,7 +79,7 @@ class PyHelperChooser(ida_kernwin.Choose):
 
     def build_items(self):
         subdir = ""
-        if is_ida_version("7.4"):
+        if is_ida_version(740):
             subdir, _, _, _, _ = sys.version_info
         pydir = ida_diskio.idadir(os.path.join("python", str(subdir)))
         for mod_name in os.listdir(pydir):
