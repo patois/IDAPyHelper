@@ -123,7 +123,7 @@ class PyHelperChooser(ida_kernwin.Choose):
                             self.items.append(data)
                         else:
                             if DBG:
-                                msg("%s: %s" % (type(obj), sym_name))
+                                ida_kernwin.msg("%s: %s" % (type(obj), sym_name))
 
     def OnGetLine(self, n):
         data = self.items[n]
